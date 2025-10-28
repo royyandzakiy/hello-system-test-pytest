@@ -12,25 +12,61 @@ execute_process(
 if(PYTEST_FOUND EQUAL 0)
     message(STATUS "pytest found: will add system tests")
     
-    # Add custom target to run system tests
-    add_custom_target(run_system_tests
-        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v
+    # Add custom target to run system tests with verbose output
+    add_custom_target(run_system_tests_verbose
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v --tb=short
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         DEPENDS hello_threads
-        COMMENT "Running system tests with pytest"
+        COMMENT "Running system tests with verbose pytest output"
     )
     
-    # Add test that can be run with ctest
+    # Add custom target with full output
+    add_custom_target(run_system_tests_full
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v -s --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS hello_threads
+        COMMENT "Running system tests with full output (no capture)"
+    )
+    
+    # Test 1: Minimal output (for CI/quick runs)
     add_test(
-        NAME system_test
-        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v
+        NAME system_test_minimal
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py --tb=short
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     
-    # Set properties for the test
-    set_tests_properties(system_test PROPERTIES
+    # Test 2: Verbose output (shows test names)
+    add_test(
+        NAME system_test_verbose
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    
+    # Test 3: Full output with print statements (for debugging)
+    add_test(
+        NAME system_test_full_output
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v -s --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    
+    # Set properties for the tests
+    set_tests_properties(system_test_minimal PROPERTIES
         TIMEOUT 30
-        LABELS "system"
+        LABELS "system;minimal"
+    )
+    
+    set_tests_properties(system_test_verbose PROPERTIES
+        TIMEOUT 30
+        LABELS "system;verbose"
+        PASS_REGULAR_EXPRESSION "PASSED"
+        FAIL_REGULAR_EXPRESSION "FAILED|ERROR"
+    )
+    
+    set_tests_properties(system_test_full_output PROPERTIES
+        TIMEOUT 30
+        LABELS "system;full;debug"
+        PASS_REGULAR_EXPRESSION "PASSED|SUCCESS"
+        FAIL_REGULAR_EXPRESSION "FAILED|ERROR"
     )
     
 else()
@@ -43,4 +79,35 @@ add_custom_target(check
     DEPENDS hello_threads
     COMMENT "Building and running all tests"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+# Add custom target for verbose testing
+add_custom_target(check_verbose
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose --output-on-failure
+    DEPENDS hello_threads
+    COMMENT "Building and running all tests with verbose output"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+# Add custom target that shows ALL output (like running pytest directly)
+add_custom_target(check_full_output
+    COMMAND ${CMAKE_CTEST_COMMAND} -R system_test_full_output --verbose --output-on-failure
+    DEPENDS hello_threads
+    COMMENT "Running tests with full output (like direct pytest)"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+# Add direct pytest targets (bypass CTest completely)
+add_custom_target(pytest_direct
+    COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v --tb=short
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS hello_threads
+    COMMENT "Running pytest directly (bypass CTest)"
+)
+
+add_custom_target(pytest_direct_full
+    COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v -s --tb=short
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS hello_threads
+    COMMENT "Running pytest directly with full output"
 )

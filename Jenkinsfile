@@ -70,6 +70,7 @@ pipeline {
             // echo "Archiving CTest and Pytest results..."
             // junit '**/build/Testing/**/*.xml'
             // junit '**/pytest-results.xml'
+            echo "Pipeline finished."
         }
         failure {
             echo "Pipeline failed."

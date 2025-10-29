@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         BUILD_DIR = "build"
-        PYTHON = "python" // or "python3" depending on your setup
+        PYTHON = "python" // or "python3" if needed
     }
 
     stages {
@@ -22,7 +22,9 @@ pipeline {
         stage('Configure') {
             steps {
                 powershell '''
-                if (Test-Path $env:BUILD_DIR) { Remove-Item -Recurse -Force $env:BUILD_DIR }
+                if (Test-Path $env:BUILD_DIR) {
+                    Remove-Item -Recurse -Force $env:BUILD_DIR
+                }
                 cmake --preset $env:CMAKE_PRESET
                 '''
             }
@@ -30,22 +32,23 @@ pipeline {
 
         stage('Build') {
             steps {
-				powershell '''
-				if (Test-Path "$env:BUILD_DIR/Makefile") {
-					Write-Host "Detected Makefile - using make"
-					cmake --build --preset $env:CMAKE_PRESET
-				} else {
-					Write-Host "Using MSBuild"
-					cmake --build --preset $env:CMAKE_PRESET -- /m
-				}
-				'''
-			}
+                powershell '''
+                if (Test-Path "$env:BUILD_DIR/Makefile") {
+                    Write-Host "Detected Makefile - using make"
+                    cmake --build --preset $env:CMAKE_PRESET
+                } else {
+                    Write-Host "Using MSBuild"
+                    cmake --build --preset $env:CMAKE_PRESET -- /m
+                }
+                '''
+            }
         }
 
         stage('CTest') {
             steps {
                 powershell '''
-                ctest --preset $env:TEST_PRESET
+                # Run tests and produce XML output Jenkins can read
+                ctest -T Test --preset $env:TEST_PRESET --output-on-failure
                 '''
             }
         }
@@ -68,9 +71,18 @@ pipeline {
     post {
         always {
             echo "Archiving CTest and Pytest results..."
-            junit '**/build/Testing/**/*.xml'
-            junit '**/pytest-results.xml'
+
+            // Archive CTest XML results
+            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                junit allowEmptyResults: true, testResults: 'build/Testing/**/*.xml'
+            }
+
+            // (Optional) archive pytest results if they exist
+            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                junit allowEmptyResults: true, testResults: 'pytest-results.xml'
+            }
         }
+
         failure {
             echo "Pipeline failed."
         }

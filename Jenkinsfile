@@ -30,10 +30,16 @@ pipeline {
 
         stage('Build') {
             steps {
-                powershell '''
-                cmake --build --preset $env:CMAKE_PRESET -- /m
-                '''
-            }
+				powershell '''
+				if (Test-Path "$env:BUILD_DIR/Makefile") {
+					Write-Host "Detected Makefile - using make"
+					cmake --build --preset $env:CMAKE_PRESET
+				} else {
+					Write-Host "Using MSBuild"
+					cmake --build --preset $env:CMAKE_PRESET -- /m
+				}
+				'''
+			}
         }
 
         stage('CTest') {

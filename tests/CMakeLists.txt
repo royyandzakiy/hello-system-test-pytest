@@ -28,6 +28,14 @@ if(PYTEST_FOUND EQUAL 0)
         COMMENT "Running system tests with full output (no capture)"
     )
     
+    # Test 0: Minimal output with Report (for CI)
+    add_test(
+        NAME system_test_minimal_report
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py --tb=short
+		--junitxml=${CMAKE_BINARY_DIR}/pytest-results/system_test_minimal_report.xml
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    
     # Test 1: Minimal output (for CI/quick runs)
     add_test(
         NAME system_test_minimal
@@ -50,6 +58,11 @@ if(PYTEST_FOUND EQUAL 0)
     )
     
     # Set properties for the tests
+    set_tests_properties(system_test_minimal_report PROPERTIES
+        TIMEOUT 30
+        LABELS "system;minimal;report"
+    )
+
     set_tests_properties(system_test_minimal PROPERTIES
         TIMEOUT 30
         LABELS "system;minimal"

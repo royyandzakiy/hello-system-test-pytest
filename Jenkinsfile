@@ -67,9 +67,9 @@ pipeline {
 
     post {
         always {
-            // echo "Archiving CTest and Pytest results..."
+            echo "Archiving Pytest results..."
+            junit 'build/pytest-results/*.xml'
             // junit '**/build/Testing/**/*.xml'
-            // junit '**/pytest-results.xml'
             echo "Pipeline finished."
         }
         failure {

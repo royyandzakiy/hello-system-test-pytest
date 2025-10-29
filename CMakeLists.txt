@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(HelloThreads VERSION 1.0.0 DESCRIPTION "A simple threaded Hello World example")
 
+set(CMAKE_COLOR_DIAGNOSTICS ON CACHE BOOL "Enable colored compiler diagnostics")
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

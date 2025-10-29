@@ -69,9 +69,56 @@ if(PYTEST_FOUND EQUAL 0)
         FAIL_REGULAR_EXPRESSION "FAILED|ERROR"
     )
     
+    # ============================================================================
+    # DIRECT PYTEST TARGETS (Bypass CTest completely - Clean output)
+    # ============================================================================
+    
+    # Pytest minimal - clean dots output
+    add_custom_target(pytest_minimal
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS hello_threads
+        COMMENT "Running pytest directly with minimal output (clean dots)"
+    )
+    
+    # Pytest verbose - clean test names with progress
+    add_custom_target(pytest_verbose
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS hello_threads
+        COMMENT "Running pytest directly with verbose output (clean test names)"
+    )
+    
+    # Pytest full - clean output with all prints
+    add_custom_target(pytest_full
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v -s --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS hello_threads
+        COMMENT "Running pytest directly with full output (clean with all prints)"
+    )
+    
+    # Alias targets for backward compatibility
+    add_custom_target(pytest_direct
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS hello_threads
+        COMMENT "Running pytest directly (bypass CTest)"
+    )
+    
+    add_custom_target(pytest_direct_full
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v -s --tb=short
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS hello_threads
+        COMMENT "Running pytest directly with full output"
+    )
+    
 else()
     message(WARNING "pytest not found: system tests will not be available")
 endif()
+
+# ============================================================================
+# CTest-based targets (for compatibility)
+# ============================================================================
 
 # Add a custom target to build and run all tests
 add_custom_target(check
@@ -97,17 +144,30 @@ add_custom_target(check_full_output
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
-# Add direct pytest targets (bypass CTest completely)
-add_custom_target(pytest_direct
+# ============================================================================
+# Combined build+test targets for direct pytest
+# ============================================================================
+
+# Build and run pytest minimal
+add_custom_target(build_and_pytest_minimal
+    COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py --tb=short
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS hello_threads
+    COMMENT "Building and running pytest with minimal output"
+)
+
+# Build and run pytest verbose  
+add_custom_target(build_and_pytest_verbose
     COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v --tb=short
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     DEPENDS hello_threads
-    COMMENT "Running pytest directly (bypass CTest)"
+    COMMENT "Building and running pytest with verbose output"
 )
 
-add_custom_target(pytest_direct_full
+# Build and run pytest full (recommended for development)
+add_custom_target(build_and_pytest_full
     COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/test_system_test.py -v -s --tb=short
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     DEPENDS hello_threads
-    COMMENT "Running pytest directly with full output"
+    COMMENT "Building and running pytest with full output (recommended for development)"
 )
